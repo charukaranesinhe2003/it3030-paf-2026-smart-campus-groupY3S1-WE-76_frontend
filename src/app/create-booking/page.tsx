@@ -10,6 +10,7 @@ import styles from './booking.module.css';
 
 interface BookingForm {
   userId: string;
+  email: string;
   resourceName: string;
   startTime: string;
   endTime: string;
@@ -19,23 +20,47 @@ interface BookingForm {
 
 interface ValidationErrors {
   userId?: string;
+  email?: string;
   resourceName?: string;
   startTime?: string;
   endTime?: string;
   attendeeCount?: string;
 }
 
-const RESOURCES = [
-  { id: 'lab-a', name: 'Lab A', capacity: 20 },
-  { id: 'lab-b', name: 'Lab B', capacity: 20 },
-  { id: 'seminar-1', name: 'Seminar Room 1', capacity: 15 },
-  { id: 'seminar-2', name: 'Seminar Room 2', capacity: 15 },
-  { id: 'auditorium', name: 'Auditorium', capacity: 100 },
-  { id: 'meeting-3', name: 'Meeting Room 3', capacity: 8 },
+type ResourceCategory = 'labs' | 'lecture-halls' | 'library-rooms' | 'auditoriums' | 'meeting-rooms';
+
+interface ResourceOption {
+  id: string;
+  name: string;
+  capacity: number;
+  category: ResourceCategory;
+}
+
+const RESOURCE_CATEGORIES: Array<{ value: ResourceCategory; label: string }> = [
+  { value: 'labs', label: 'Labs' },
+  { value: 'lecture-halls', label: 'Lecture Halls' },
+  { value: 'library-rooms', label: 'Library Rooms' },
+  { value: 'auditoriums', label: 'Auditoriums' },
+  { value: 'meeting-rooms', label: 'Meeting Rooms' },
+];
+
+const RESOURCES: ResourceOption[] = [
+  { id: 'lab-a', name: 'Lab A', capacity: 20, category: 'labs' },
+  { id: 'lab-b', name: 'Lab B', capacity: 20, category: 'labs' },
+  { id: 'lab-c', name: 'Lab C', capacity: 24, category: 'labs' },
+  { id: 'lecture-hall-1', name: 'Lecture Hall 1', capacity: 80, category: 'lecture-halls' },
+  { id: 'lecture-hall-2', name: 'Lecture Hall 2', capacity: 120, category: 'lecture-halls' },
+  { id: 'library-room-1', name: 'Library Room 1', capacity: 12, category: 'library-rooms' },
+  { id: 'library-room-2', name: 'Library Room 2', capacity: 16, category: 'library-rooms' },
+  { id: 'auditorium', name: 'Auditorium', capacity: 100, category: 'auditoriums' },
+  { id: 'meeting-room-1', name: 'Meeting Room 1', capacity: 8, category: 'meeting-rooms' },
+  { id: 'meeting-room-2', name: 'Meeting Room 2', capacity: 10, category: 'meeting-rooms' },
+  { id: 'meeting-room-3', name: 'Meeting Room 3', capacity: 8, category: 'meeting-rooms' },
 ];
 
 const MIN_BOOKING_DURATION = 30; // minutes
 const MAX_BOOKING_DURATION = 480; // 8 hours in minutes
+const GMAIL_REGEX = /^[a-z0-9._%+-]+@gmail\.com$/;
 
 function normalizeLocalDateTime(value: string): string {
   const trimmed = value.trim();
@@ -54,7 +79,7 @@ function CreateBookingContent() {
   const router = useRouter();
   const { showToast } = useToast();
   const [form, setForm] = useState<BookingForm>({
-    userId: '', resourceName: '', startTime: '', endTime: '', attendeeCount: '', purpose: '',
+    userId: '', email: '', resourceName: '', startTime: '', endTime: '', attendeeCount: '', purpose: '',
   });
   
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
@@ -83,6 +108,13 @@ function CreateBookingContent() {
       errors.userId = 'User ID is required';
     } else if (form.userId.trim().length < 3) {
       errors.userId = 'User ID must be at least 3 characters';
+    }
+
+    // Validate email
+    if (!form.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!GMAIL_REGEX.test(form.email.trim())) {
+      errors.email = 'Please enter a valid Gmail address (example@gmail.com)';
     }
 
     // Validate resourceName
@@ -175,6 +207,7 @@ function CreateBookingContent() {
 
       const payload = {
         userId: form.userId.trim(),
+        email: form.email.trim().toLowerCase(),
         resourceName: form.resourceName,
         startTime: startTime,
         endTime: endTime,
@@ -196,7 +229,29 @@ function CreateBookingContent() {
       });
       console.log('=======================');
 
-      const res = await createBooking(payload);
+      let res;
+      try {
+        res = await createBooking(payload);
+      } catch (firstError) {
+        if (axios.isAxiosError(firstError)) {
+          const responseData = firstError.response?.data;
+          const responseMessage =
+            typeof responseData === 'string'
+              ? responseData
+              : (typeof responseData?.message === 'string' ? responseData.message : '');
+
+          if (responseMessage.includes('Unrecognized field "email"')) {
+            const fallbackPayload = { ...payload };
+            delete (fallbackPayload as { email?: string }).email;
+            res = await createBooking(fallbackPayload);
+            showToast('Booking created, but backend email support is not active yet.', 'warning', 5000);
+          } else {
+            throw firstError;
+          }
+        } else {
+          throw firstError;
+        }
+      }
 
       console.log('✅ Booking created:', res.data);
 
@@ -207,7 +262,7 @@ function CreateBookingContent() {
 
       // Reset form
       setForm({
-        userId: '', resourceName: '', startTime: '', endTime: '', attendeeCount: '', purpose: '',
+        userId: '', email: '', resourceName: '', startTime: '', endTime: '', attendeeCount: '', purpose: '',
       });
 
       // Navigate after 3 seconds
@@ -363,9 +418,40 @@ function CreateBookingContent() {
           </div>
         )}
 
-        {/* Main Form Card */}
-        <div className={styles.formCard}>
-          <form onSubmit={handleSubmit} noValidate>
+        <div className={styles.layoutGrid}>
+          <aside className={styles.sidePanel}>
+            <h2 className={styles.sideTitle}>Plan Smarter</h2>
+            <p className={styles.sideText}>
+              Use this form to request a resource quickly, avoid conflicts, and get faster approval.
+            </p>
+
+            <div className={styles.pillList}>
+              <span className={styles.pill}>Fast Request</span>
+              <span className={styles.pill}>Capacity Checked</span>
+              <span className={styles.pill}>Conflict Detection</span>
+            </div>
+
+            <div className={styles.stepItem}>
+              <span className={styles.stepNumber}>1</span>
+              <span className={styles.stepText}>Enter requester and contact details</span>
+            </div>
+            <div className={styles.stepItem}>
+              <span className={styles.stepNumber}>2</span>
+              <span className={styles.stepText}>Select resource, attendees, and time</span>
+            </div>
+            <div className={styles.stepItem}>
+              <span className={styles.stepNumber}>3</span>
+              <span className={styles.stepText}>Submit and wait for admin approval</span>
+            </div>
+          </aside>
+
+          {/* Main Form Card */}
+          <div className={styles.formCard}>
+            <form onSubmit={handleSubmit} noValidate>
+              <div className={styles.sectionHeader}>
+                <span className={styles.sectionKicker}>Step 1</span>
+                <h3 className={styles.sectionTitle}>Requester Details</h3>
+              </div>
             {/* User ID Field */}
             <div className={styles.formGroup}>
               <label htmlFor="userId" className={styles.label}>
@@ -389,6 +475,34 @@ function CreateBookingContent() {
               )}
             </div>
 
+            {/* Email Field */}
+            <div className={styles.formGroup}>
+              <label htmlFor="email" className={styles.label}>
+                Email Address <span className={styles.required}>*</span>
+              </label>
+              <input
+                id="email"
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={onChange}
+                placeholder="e.g., student@university.edu"
+                className={`${styles.input} ${validationErrors.email ? styles.inputError : ''}`}
+                aria-invalid={!!validationErrors.email}
+                aria-describedby={validationErrors.email ? 'email-error' : undefined}
+              />
+              {validationErrors.email && (
+                <span id="email-error" className={styles.errorMessage}>
+                  {validationErrors.email}
+                </span>
+              )}
+            </div>
+
+            <div className={styles.sectionHeader}>
+              <span className={styles.sectionKicker}>Step 2</span>
+              <h3 className={styles.sectionTitle}>Booking Details</h3>
+            </div>
+
             {/* Resource Selection */}
             <div className={styles.formGroup}>
               <label htmlFor="resourceName" className={styles.label}>
@@ -404,11 +518,18 @@ function CreateBookingContent() {
                 aria-describedby={validationErrors.resourceName ? 'resource-error' : undefined}
               >
                 <option value="">— Select a resource —</option>
-                {RESOURCES.map((resource) => (
-                  <option key={resource.id} value={resource.name}>
-                    {resource.name} (Capacity: {resource.capacity})
-                  </option>
-                ))}
+                {RESOURCE_CATEGORIES.map((category) => {
+                  const categoryResources = RESOURCES.filter((resource) => resource.category === category.value);
+                  return (
+                    <optgroup key={category.value} label={category.label}>
+                      {categoryResources.map((resource) => (
+                        <option key={resource.id} value={resource.name}>
+                          {resource.name} (Capacity: {resource.capacity})
+                        </option>
+                      ))}
+                    </optgroup>
+                  );
+                })}
               </select>
               {validationErrors.resourceName && (
                 <span id="resource-error" className={styles.errorMessage}>
@@ -483,33 +604,26 @@ function CreateBookingContent() {
             </div>
 
             {/* Purpose Field */}
+            <div className={styles.sectionHeader}>
+              <span className={styles.sectionKicker}>Step 3</span>
+              <h3 className={styles.sectionTitle}>Purpose & Submission</h3>
+            </div>
             <div className={styles.formGroup}>
               <label htmlFor="purpose" className={styles.label}>
-                Purpose <span className={styles.optional}>(Optional)</span>
+                Purpose
               </label>
               <textarea
                 id="purpose"
                 name="purpose"
                 value={form.purpose}
                 onChange={onChange}
-                placeholder="What is this booking for? (e.g., Lab practical, Project work, Student meeting)"
+                placeholder="What is this booking for?"
                 className={styles.textarea}
                 rows={4}
               />
               <p className={styles.helpText}>
                 Provide any relevant details about your booking request to help admins make informed decisions.
               </p>
-            </div>
-
-            {/* Form Guidelines */}
-            <div className={styles.guidelinesBox}>
-              <h3 className={styles.guidelinesTitle}>📋 Booking Guidelines</h3>
-              <ul className={styles.guidelinesList}>
-                <li>Minimum booking duration: <strong>30 minutes</strong></li>
-                <li>Maximum booking duration: <strong>8 hours</strong></li>
-                <li>Bookings must be in the future</li>
-                <li>All bookings require <strong>admin approval</strong></li>
-              </ul>
             </div>
 
             {/* Submit Button */}
@@ -537,7 +651,8 @@ function CreateBookingContent() {
                 Cancel
               </button>
             </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>

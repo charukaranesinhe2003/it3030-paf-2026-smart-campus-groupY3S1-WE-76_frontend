@@ -117,7 +117,13 @@ export default function DateTimePicker({ value, onChange, label }: DateTimePicke
         readOnly
         value={displayValue}
         onClick={() => setIsOpen(!isOpen)}
-        style={{ cursor: 'pointer', background: '#f5f5f5' }}
+        style={{
+          cursor: 'pointer',
+          background: '#f5f5f5',
+          color: value ? '#0f172a' : '#64748b',
+          fontWeight: value ? 600 : 400,
+          border: '1px solid #cfdad5'
+        }}
         placeholder="Click to select"
       />
       {error && <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>⚠ {error}</div>}
@@ -185,28 +191,29 @@ export default function DateTimePicker({ value, onChange, label }: DateTimePicke
               </div>
             ))}
             {days.map((day, idx) => {
-              const isPast = day && isPastDate(day, month, year);
+              const hasDay = day !== null;
+              const isPast = hasDay ? isPastDate(day, month, year) : false;
               return (
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => day && !isPast && handleDateClick(day)}
-                  disabled={!day || isPast}
-                  title={isPast && day ? 'Past date not allowed' : ''}
+                  onClick={() => hasDay && !isPast && handleDateClick(day)}
+                  disabled={!hasDay || isPast}
+                  title={isPast && hasDay ? 'Past date not allowed' : ''}
                   style={{
                     padding: '8px',
-                    border: isPast && day ? '1px solid #fee2e2' : '1px solid #ddd',
+                    border: isPast && hasDay ? '1px solid #fee2e2' : '1px solid #ddd',
                     borderRadius: '4px',
-                    background: day && new Date(year, month, day).toDateString() === displayDate.toDateString() 
+                    background: hasDay && new Date(year, month, day).toDateString() === displayDate.toDateString() 
                       ? '#4f46e5' 
-                      : isPast && day ? '#fee2e2' : day ? 'white' : 'transparent',
-                    color: day && new Date(year, month, day).toDateString() === displayDate.toDateString()
+                      : isPast && hasDay ? '#fee2e2' : hasDay ? 'white' : 'transparent',
+                    color: hasDay && new Date(year, month, day).toDateString() === displayDate.toDateString()
                       ? 'white' 
-                      : isPast && day ? '#fca5a5' : '#333',
-                    cursor: day && !isPast ? 'pointer' : 'not-allowed',
+                      : isPast && hasDay ? '#fca5a5' : '#333',
+                    cursor: hasDay && !isPast ? 'pointer' : 'not-allowed',
                     fontSize: '14px',
-                    fontWeight: day ? 500 : 400,
-                    opacity: isPast && day ? 0.5 : 1,
+                    fontWeight: hasDay ? 500 : 400,
+                    opacity: isPast && hasDay ? 0.5 : 1,
                   }}
                 >
                   {day}

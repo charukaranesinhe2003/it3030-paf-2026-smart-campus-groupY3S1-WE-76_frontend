@@ -123,14 +123,18 @@ function MyBookingsContent() {
   };
 
   return (
-    <div className={styles.container}>
-        {/* Header */}
-        <div className={styles.header}>
-          <h1 className={styles.title}>My Bookings</h1>
-          <p className={styles.subtitle}>View and manage all your resource bookings</p>
+    <div className={styles.pageShell}>
+      <div className={styles.backdropOrbA}></div>
+      <div className={styles.backdropOrbB}></div>
+
+      <div className={styles.container}>
+        <div className={styles.headerCard}>
+          <div>
+            <h1 className={styles.title}>My Bookings</h1>
+            <p className={styles.subtitle}>Track requests, monitor approvals, and manage upcoming sessions in one place.</p>
+          </div>
         </div>
 
-        {/* Search Section */}
         <div className={styles.searchSection}>
           <form className={styles.searchForm} onSubmit={handleSearch}>
             <input
@@ -145,15 +149,13 @@ function MyBookingsContent() {
           </form>
         </div>
 
-        {/* Error State */}
         {error && (
           <div className={styles.errorState}>
-            <div className={styles.errorIcon}>⚠️</div>
+            <div className={styles.errorIcon}>!</div>
             <div className={styles.errorMessage}>{error}</div>
           </div>
         )}
 
-        {/* Loading State */}
         {loading && (
           <div className={styles.statusLoading}>
             <div className={styles.loaderSpinner}></div>
@@ -161,10 +163,9 @@ function MyBookingsContent() {
           </div>
         )}
 
-        {/* Stats Bar (when bookings are loaded) */}
         {!loading && userId && data.length > 0 && (
           <div className={styles.bookingStatsBar}>
-            <div className={styles.statCard}>
+            <div className={`${styles.statCard} ${styles.statCardPrimary}`}>
               <div className={styles.statLabel}>Total Bookings</div>
               <div className={styles.statValue}>{stats.total}</div>
             </div>
@@ -187,9 +188,10 @@ function MyBookingsContent() {
           </div>
         )}
 
-        {/* View Toggle */}
         {!loading && userId && data.length > 0 && (
-          <div className={styles.viewToggle}>
+          <div className={styles.controlBar}>
+            <p className={styles.controlHint}>View mode</p>
+            <div className={styles.viewToggle}>
             <button
               type="button"
               className={`${styles.viewBtn} ${viewMode === "list" ? styles.viewBtnActive : ""}`}
@@ -204,13 +206,13 @@ function MyBookingsContent() {
             >
               Schedule View
             </button>
+            </div>
           </div>
         )}
 
-        {/* Empty State */}
         {!loading && userId && data.length === 0 && !error && (
           <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>📭</div>
+            <div className={styles.emptyIcon}>0</div>
             <h2 className={styles.emptyTitle}>No Bookings Found</h2>
             <p className={styles.emptyText}>
               No bookings found for <strong>{userId}</strong>. <br />
@@ -222,7 +224,6 @@ function MyBookingsContent() {
           </div>
         )}
 
-        {/* Bookings List */}
         {!loading && userId && data.length > 0 && viewMode === "list" && (
           <ul className={styles.bookingsList}>
             {data.map((b) => (
@@ -238,7 +239,6 @@ function MyBookingsContent() {
           </ul>
         )}
 
-        {/* Schedule View */}
         {!loading && userId && data.length > 0 && viewMode === "schedule" && (
           <div className={styles.scheduleView}>
             {scheduleGroups.map(([dateKey, bookings]) => (
@@ -263,10 +263,9 @@ function MyBookingsContent() {
           </div>
         )}
 
-        {/* Initial state (no search yet) */}
         {!loading && !userId && data.length === 0 && !error && (
           <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>🔍</div>
+            <div className={styles.emptyIcon}>?</div>
             <h2 className={styles.emptyTitle}>Search for Your Bookings</h2>
             <p className={styles.emptyText}>
               Enter your User ID above to view all your bookings and manage them.
@@ -274,6 +273,7 @@ function MyBookingsContent() {
           </div>
         )}
       </div>
+    </div>
   );
 }
 

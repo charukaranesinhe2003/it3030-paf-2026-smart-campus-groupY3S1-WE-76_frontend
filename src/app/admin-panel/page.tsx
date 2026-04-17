@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { getAllBookings } from "@/services/bookingApi";
 import BookingCard from "@/components/BookingCard";
 import ToastContainer from "@/components/ToastContainer";
+import styles from "./AdminPanel.module.css";
 
 type Status = "ALL" | "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
 
@@ -26,6 +27,7 @@ type Analytics = {
   pending: number;
   approved: number;
   rejected: number;
+  cancelled: number;
   mostUsedResource: string;
 };
 
@@ -39,6 +41,7 @@ export default function AdminPanel() {
     pending: 0,
     approved: 0,
     rejected: 0,
+    cancelled: 0,
     mostUsedResource: "N/A",
   });
   const [loading, setLoading] = useState(false);
@@ -60,6 +63,7 @@ export default function AdminPanel() {
       pending: bookings.filter((b) => b.status === "PENDING").length,
       approved: bookings.filter((b) => b.status === "APPROVED").length,
       rejected: bookings.filter((b) => b.status === "REJECTED").length,
+      cancelled: bookings.filter((b) => b.status === "CANCELLED").length,
       mostUsedResource,
     };
   }, []);
@@ -85,76 +89,95 @@ export default function AdminPanel() {
     fetchBookings(tab);
   }, [tab, fetchBookings]);
 
+  const tabCount = (status: Status) => {
+    if (status === "ALL") return analytics.total;
+    if (status === "PENDING") return analytics.pending;
+    if (status === "APPROVED") return analytics.approved;
+    if (status === "REJECTED") return analytics.rejected;
+    return analytics.cancelled;
+  };
+
   return (
     <ToastContainer>
-      <div className="page-wrap">
-        <h1 className="page-title">
-          Admin <span>Panel</span>
-        </h1>
+      <div className={styles.pageShell}>
+        <div className={styles.backdropOrbA}></div>
+        <div className={styles.backdropOrbB}></div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
-            gap: "12px",
-            marginBottom: "18px",
-          }}
-        >
-          <div className="card" style={{ padding: "12px" }}>
-            <div style={{ fontSize: "12px", opacity: 0.8 }}>Total Bookings</div>
-            <div style={{ fontSize: "22px", fontWeight: 700 }}>{analytics.total}</div>
-          </div>
-          <div className="card" style={{ padding: "12px" }}>
-            <div style={{ fontSize: "12px", opacity: 0.8 }}>Pending</div>
-            <div style={{ fontSize: "22px", fontWeight: 700 }}>{analytics.pending}</div>
-          </div>
-          <div className="card" style={{ padding: "12px" }}>
-            <div style={{ fontSize: "12px", opacity: 0.8 }}>Approved</div>
-            <div style={{ fontSize: "22px", fontWeight: 700 }}>{analytics.approved}</div>
-          </div>
-          <div className="card" style={{ padding: "12px" }}>
-            <div style={{ fontSize: "12px", opacity: 0.8 }}>Rejected</div>
-            <div style={{ fontSize: "22px", fontWeight: 700 }}>{analytics.rejected}</div>
-          </div>
-          <div className="card" style={{ padding: "12px" }}>
-            <div style={{ fontSize: "12px", opacity: 0.8 }}>Most Used Resource</div>
-            <div style={{ fontSize: "18px", fontWeight: 700 }}>{analytics.mostUsedResource}</div>
-          </div>
+        <div className={styles.container}>
+          <section className={styles.headerCard}>
+            <div>
+              <h1 className={styles.pageTitle}>Admin Panel</h1>
+              <p className={styles.subtitle}>Review incoming requests, handle approvals, and monitor booking activity in real time.</p>
+            </div>
+          </section>
+
+          <section className={styles.analyticsGrid}>
+            <div className={`${styles.statCard} ${styles.statCardPrimary}`}>
+              <div className={styles.statLabel}>Total Bookings</div>
+              <div className={styles.statValue}>{analytics.total}</div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={styles.statLabel}>Pending</div>
+              <div className={`${styles.statValue} ${styles.valuePending}`}>{analytics.pending}</div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={styles.statLabel}>Approved</div>
+              <div className={`${styles.statValue} ${styles.valueApproved}`}>{analytics.approved}</div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={styles.statLabel}>Rejected</div>
+              <div className={`${styles.statValue} ${styles.valueRejected}`}>{analytics.rejected}</div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={styles.statLabel}>Cancelled</div>
+              <div className={`${styles.statValue} ${styles.valueCancelled}`}>{analytics.cancelled}</div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={styles.statLabel}>Most Used Resource</div>
+              <div className={styles.resourceValue}>{analytics.mostUsedResource}</div>
+            </div>
+          </section>
+
+          <section className={styles.tabSection}>
+            <p className={styles.tabHint}>Filter by status</p>
+            <div className={styles.tabBar}>
+              {TABS.map((t) => (
+                <button
+                  key={t}
+                  className={`${styles.tabBtn} ${tab === t ? styles.tabBtnActive : ""}`}
+                  onClick={() => setTab(t)}
+                >
+                  <span>{t}</span>
+                  <strong className={styles.tabCount}>{tabCount(t)}</strong>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {error && <div className={styles.errorBox}>{error}</div>}
+          {loading && <div className={styles.loader}>Loading bookings...</div>}
+
+          {!loading && data.length === 0 && (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>0</div>
+              <p>No bookings with status <strong>{tab}</strong>.</p>
+            </div>
+          )}
+
+          {!loading && data.length > 0 && (
+            <div className={styles.listWrap}>
+              {data.map((b) => (
+                <BookingCard
+                  key={b.id}
+                  booking={b}
+                  isAdmin={true}
+                  currentUserId={""}
+                  onRefresh={() => fetchBookings(tab)}
+                />
+              ))}
+            </div>
+          )}
         </div>
-
-        <div className="tab-bar">
-          {TABS.map((t) => (
-            <button
-              key={t}
-              className={`tab-btn ${tab === t ? "active" : ""}`}
-              onClick={() => setTab(t)}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-
-        {error && <div className="alert alert-error">{error}</div>}
-        {loading && <div className="loader">Loading…</div>}
-
-        {!loading && data.length === 0 && (
-          <div className="empty-state">
-            <div className="icon">📋</div>
-            <p>
-              No bookings with status <strong>{tab}</strong>.
-            </p>
-          </div>
-        )}
-
-        {data.map((b) => (
-          <BookingCard
-            key={b.id}
-            booking={b}
-            isAdmin={true}
-            currentUserId={""}
-            onRefresh={() => fetchBookings(tab)}
-          />
-        ))}
       </div>
     </ToastContainer>
   );
