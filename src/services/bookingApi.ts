@@ -11,3 +11,4 @@ export const getBookingById    = (id: number)                     => api.get(`/$
 export const getBookingsByUser = (userId: string)                 => api.get(`/user/${userId}`);
 export const approveOrReject   = (id: number, data: any)          => api.patch(`/${id}/status`, data);
 export const cancelBooking     = (id: number, userId: string)     => api.patch(`/${id}/cancel`, null, { params: { userId } });
+export const updateBooking     = (id: number, data: any, userId: string) => api.put(`/${id}`, data, { params: { userId } });
