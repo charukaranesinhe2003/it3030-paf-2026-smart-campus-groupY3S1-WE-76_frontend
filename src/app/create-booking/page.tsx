@@ -1,19 +1,29 @@
 import React, { useState } from 'react';
-import { createBooking } from '../api/bookingApi';
+import axios from 'axios';
+import { createBooking } from '@/services/bookingApi';
+
+interface BookingForm {
+  userId: string;
+  resourceName: string;
+  startTime: string;
+  endTime: string;
+  purpose: string;
+}
 
 const RESOURCES = ['Lab A', 'Lab B', 'Seminar Room 1', 'Seminar Room 2', 'Auditorium', 'Meeting Room 3'];
 
 export default function CreateBooking() {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<BookingForm>({
     userId: '', resourceName: '', startTime: '', endTime: '', purpose: '',
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError]     = useState('');
 
-  const onChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => 
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(''); setSuccess(''); setLoading(true);
     try {
@@ -26,8 +36,10 @@ export default function CreateBooking() {
       setSuccess(`✅ Booking #${res.data.id} submitted! Status: PENDING — awaiting admin approval.`);
       setForm({ userId: '', resourceName: '', startTime: '', endTime: '', purpose: '' });
     } catch (e) {
-      const msg = e.response?.data?.message || e.response?.data?.error || 'Failed to create booking.';
-      setError(msg);
+      const msg = axios.isAxiosError(e) 
+        ? e.response?.data?.message || e.response?.data?.error 
+        : 'Failed to create booking.';
+      setError(msg || 'Failed to create booking.');
     } finally { setLoading(false); }
   };
 
