@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import StatusBadge from './StatusBadge';
 import { approveOrReject, cancelBooking } from '../services/bookingApi';
