@@ -14,6 +14,9 @@ type Booking = {
   endTime: string;
   purpose?: string;
   status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+  adminNote?: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 const TABS: Status[] = ["ALL", "PENDING", "APPROVED", "REJECTED", "CANCELLED"];
@@ -28,7 +31,7 @@ export default function AdminPanel() {
     setLoading(true);
     setError("");
     try {
-      const res = await getAllBookings(status === "ALL" ? undefined : status);
+      const res = await getAllBookings(status === "ALL" ? null : status);
       setData(res.data);
     } catch (e) {
       setError("Failed to load bookings.");
