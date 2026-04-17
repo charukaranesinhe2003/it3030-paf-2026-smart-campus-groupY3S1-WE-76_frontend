@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = 'http://localhost:8081/api/bookings';
 
+async function parseBackendBody(response: Response) {
+  const text = await response.text();
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+}
+
 async function handler(request: NextRequest) {
   try {
     const { pathname, searchParams } = request.nextUrl;
@@ -41,7 +52,7 @@ async function handler(request: NextRequest) {
 
     console.log('[API Proxy Dynamic] Backend status:', response.status);
     
-    const data = await response.json();
+    const data = await parseBackendBody(response);
     
     if (!response.ok) {
       console.error('[API Proxy Dynamic] Error response:', data);

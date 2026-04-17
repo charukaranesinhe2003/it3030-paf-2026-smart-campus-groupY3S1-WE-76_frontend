@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = 'http://localhost:8081/api/bookings';
 
+async function parseBackendBody(response: Response) {
+  const text = await response.text();
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -19,7 +30,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const data = await response.json();
+    const data = await parseBackendBody(response);
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('[API Proxy] GET Error:', error);
@@ -103,7 +114,7 @@ export async function PATCH(request: NextRequest) {
       body: body ? JSON.stringify(body) : undefined,
     });
 
-    const data = await response.json();
+    const data = await parseBackendBody(response);
     
     if (!response.ok) {
       console.error('[API Proxy] PATCH error:', data);
@@ -146,7 +157,7 @@ export async function PUT(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    const data = await response.json();
+    const data = await parseBackendBody(response);
     
     if (!response.ok) {
       console.error('[API Proxy] PUT error:', data);

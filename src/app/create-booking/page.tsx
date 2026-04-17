@@ -37,6 +37,19 @@ const RESOURCES = [
 const MIN_BOOKING_DURATION = 30; // minutes
 const MAX_BOOKING_DURATION = 480; // 8 hours in minutes
 
+function normalizeLocalDateTime(value: string): string {
+  const trimmed = value.trim();
+  // DateTimePicker may return either YYYY-MM-DDTHH:mm or YYYY-MM-DDTHH:mm:ss.
+  // Ensure payload is always YYYY-MM-DDTHH:mm:ss.
+  const hasSeconds = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(trimmed);
+  if (hasSeconds) return trimmed;
+
+  const hasMinutePrecision = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(trimmed);
+  if (hasMinutePrecision) return `${trimmed}:00`;
+
+  return trimmed;
+}
+
 function CreateBookingContent() {
   const router = useRouter();
   const { showToast } = useToast();
@@ -86,7 +99,7 @@ function CreateBookingContent() {
         errors.attendeeCount = 'Attendee count must be at least 1';
       } else {
         // Get selected resource capacity
-        const selectedResource = RESOURCES.find(r => r.id === form.resourceName);
+        const selectedResource = RESOURCES.find(r => r.name === form.resourceName);
         if (selectedResource && count > selectedResource.capacity) {
           errors.attendeeCount = `Attendee count cannot exceed capacity of ${selectedResource.capacity}`;
         }
@@ -157,10 +170,8 @@ function CreateBookingContent() {
     setLoading(true);
 
     try {
-      // Times from DateTimePicker are already in format: YYYY-MM-DDTHH:mm (local time)
-      // Convert to YYYY-MM-DDTHH:mm:ss format for API
-      const startTime = form.startTime + ':00';
-      const endTime = form.endTime + ':00';
+      const startTime = normalizeLocalDateTime(form.startTime);
+      const endTime = normalizeLocalDateTime(form.endTime);
 
       const payload = {
         userId: form.userId.trim(),
@@ -204,28 +215,38 @@ function CreateBookingContent() {
         router.push(`/my-bookings?userId=${payload.userId}`);
       }, 3000);
     } catch (e) {
-      console.error('❌ Full error object:', e);
       let msg = 'Failed to create booking. Please try again.';
       let details = '';
 
+      const isRecord = (value: unknown): value is Record<string, unknown> =>
+        typeof value === 'object' && value !== null;
+
       if (axios.isAxiosError(e)) {
         const status = e.response?.status;
-        const responseData = e.response?.data as any;
-        
-        console.error('API Error Details:', {
-          status,
-          statusText: e.response?.statusText,
-          data: responseData,
-          headers: e.response?.headers,
-          request: e.config?.url
-        });
+        const responseData: unknown = e.response?.data;
+
+        // Keep diagnostics in dev, but avoid noisy console errors in runtime overlay.
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('API Error Details:', {
+            status,
+            statusText: e.response?.statusText,
+            data: responseData ?? null,
+            headers: e.response?.headers,
+            requestUrl: e.config?.url,
+            method: e.config?.method,
+            code: e.code,
+            message: e.message,
+            hasResponse: Boolean(e.response),
+            hasRequest: Boolean(e.request),
+          });
+        }
 
         // Priority order for error extraction
-        if (responseData?.message) {
+        if (isRecord(responseData) && typeof responseData.message === 'string') {
           msg = responseData.message;
-        } else if (responseData?.error) {
+        } else if (isRecord(responseData) && typeof responseData.error === 'string') {
           msg = responseData.error;
-        } else if (responseData?.fieldErrors) {
+        } else if (isRecord(responseData) && isRecord(responseData.fieldErrors)) {
           // Handle field-level validation errors
           msg = 'Validation failed:';
           details = Object.entries(responseData.fieldErrors)
@@ -241,10 +262,12 @@ function CreateBookingContent() {
           }
         } else if (status === 409) {
           msg = 'Booking conflict: Resource is already booked for this time';
-          details = responseData?.message || '';
+          if (isRecord(responseData) && typeof responseData.message === 'string') {
+            details = responseData.message;
+          }
         } else if (status === 500) {
           msg = 'Server error. Please try again later.';
-          if (responseData?.message) {
+          if (isRecord(responseData) && typeof responseData.message === 'string') {
             details = responseData.message;
           } else if (typeof responseData === 'string') {
             details = responseData;
@@ -265,16 +288,20 @@ function CreateBookingContent() {
           }
         }
       } else if (e instanceof Error) {
-        console.error('Non-Axios Error:', {
-          name: e.name,
-          message: e.message,
-          stack: e.stack
-        });
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('Non-Axios Error:', {
+            name: e.name,
+            message: e.message,
+            stack: e.stack
+          });
+        }
         msg = e.message || 'An unexpected error occurred';
       }
 
-      console.error('Error message to display:', msg);
-      console.error('Error details:', details);
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('Error message to display:', msg);
+        console.debug('Error details:', details);
+      }
 
       const errorMsg = details ? `${msg}\n\n${details}` : msg;
       setError(errorMsg);

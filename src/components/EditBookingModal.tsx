@@ -41,6 +41,17 @@ const RESOURCES = [
 const MIN_BOOKING_DURATION = 30; // minutes
 const MAX_BOOKING_DURATION = 480; // 8 hours in minutes
 
+function normalizeLocalDateTime(value: string): string {
+  const trimmed = value.trim();
+  const hasSeconds = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(trimmed);
+  if (hasSeconds) return trimmed;
+
+  const hasMinutePrecision = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(trimmed);
+  if (hasMinutePrecision) return `${trimmed}:00`;
+
+  return trimmed;
+}
+
 export default function EditBookingModal({
   booking,
   isOpen,
@@ -135,8 +146,8 @@ export default function EditBookingModal({
 
     try {
       const payload = {
-        startTime: form.startTime,
-        endTime: form.endTime,
+        startTime: normalizeLocalDateTime(form.startTime),
+        endTime: normalizeLocalDateTime(form.endTime),
         attendeeCount: parseInt(form.attendeeCount, 10),
         purpose: form.purpose || undefined,
       };

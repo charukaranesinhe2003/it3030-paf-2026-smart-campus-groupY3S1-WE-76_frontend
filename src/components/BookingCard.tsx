@@ -6,6 +6,7 @@ import EditBookingModal from './EditBookingModal';
 import { approveOrReject, cancelBooking } from '../services/bookingApi';
 import { useToast } from './ToastContainer';
 import axios from 'axios';
+import styles from './BookingCard.module.css';
 
 interface Booking {
   id: number;
@@ -41,17 +42,24 @@ export default function BookingCard({ booking, isAdmin, currentUserId, onRefresh
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { showToast } = useToast();
 
+  const getActionSuccessMessage = (action: string) => {
+    if (action === 'APPROVE') return `Booking #${booking.id} approved successfully`;
+    if (action === 'REJECT') return `Booking #${booking.id} rejected successfully`;
+    return `Booking #${booking.id} updated successfully`;
+  };
+
   const handleAction = async (action: string) => {
     setLoading(true); 
     setError('');
     try {
       await approveOrReject(booking.id, { action, adminNote: note });
-      const actionText = action.charAt(0) + action.slice(1).toLowerCase();
-      showToast(`Booking #${booking.id} ${actionText.toLowerCase()}ed successfully`, 'success');
+      showToast(getActionSuccessMessage(action), 'success');
       setNote('');
       onRefresh();
     } catch (e) {
-      const errorMsg = axios.isAxiosError(e) ? e.response?.data?.message : 'Action failed';
+      const errorMsg = axios.isAxiosError(e)
+        ? e.response?.data?.message || e.response?.data?.error
+        : 'Action failed';
       setError(errorMsg || 'Action failed');
       showToast(errorMsg || 'Action failed', 'error');
     } finally { setLoading(false); }
@@ -66,66 +74,112 @@ export default function BookingCard({ booking, isAdmin, currentUserId, onRefresh
       showToast(`Booking #${booking.id} cancelled successfully`, 'success');
       onRefresh();
     } catch (e) {
-      const errorMsg = axios.isAxiosError(e) ? e.response?.data?.message : 'Cancel failed';
+      const errorMsg = axios.isAxiosError(e)
+        ? e.response?.data?.message || e.response?.data?.error
+        : 'Cancel failed';
       setError(errorMsg || 'Cancel failed');
       showToast(errorMsg || 'Cancel failed', 'error');
     } finally { setLoading(false); }
   };
 
   return (
-    <div className="card">
-      <div className="booking-header">
-        <div>
-          <span className="booking-id">#{booking.id}</span>
-          <h3 style={{ fontSize: '1rem', fontWeight: 600, marginTop: 2 }}>{booking.resourceName}</h3>
+    <div className={styles.bookingCard}>
+      {/* Header */}
+      <div className={styles.bookingHeader}>
+        <div className={styles.bookingInfo}>
+          <div className={styles.bookingId}>Booking #{booking.id}</div>
+          <h3 className={styles.bookingTitle}>{booking.resourceName}</h3>
         </div>
-        <StatusBadge status={booking.status} />
+        <div className={getStatusBadgeClass(booking.status)}>
+          {getStatusLabel(booking.status)}
+        </div>
       </div>
 
-      {booking.purpose && <p className="booking-purpose">"{booking.purpose}"</p>}
-
-      <div className="booking-meta">
-        <span className="meta-item">👤 {booking.userId}</span>
-        <span className="meta-item">🕐 {fmt(booking.startTime)}</span>
-        <span className="meta-item">🕔 {fmt(booking.endTime)}</span>
-        <span className="meta-item">📅 Created {fmt(booking.createdAt)}</span>
+      {/* Meta Information */}
+      <div className={styles.bookingMeta}>
+        <div className={styles.metaItem}>
+          <div className={styles.metaLabel}>📅 Date & Time</div>
+          <div className={styles.metaValue}>{fmt(booking.startTime)} - {fmt(booking.endTime)}</div>
+        </div>
+        <div className={styles.metaItem}>
+          <div className={styles.metaLabel}>👥 Attendees</div>
+          <div className={styles.metaValue}>{booking.attendeeCount} {booking.attendeeCount === 1 ? 'person' : 'people'}</div>
+        </div>
+        <div className={styles.metaItem}>
+          <div className={styles.metaLabel}>👤 User ID</div>
+          <div className={styles.metaValue}>{booking.userId}</div>
+        </div>
+        <div className={styles.metaItem}>
+          <div className={styles.metaLabel}>⏰ Created</div>
+          <div className={styles.metaValue}>{fmt(booking.createdAt)}</div>
+        </div>
       </div>
 
-      {booking.adminNote && (
-        <p className="admin-note">💬 Admin: {booking.adminNote}</p>
+      {/* Purpose */}
+      {booking.purpose && (
+        <div className={styles.bookingPurpose}>
+          <span className={styles.bookingPurposeLabel}>Purpose</span>
+          {booking.purpose}
+        </div>
       )}
 
-      {error && <div className="alert alert-error" style={{ marginTop: 10 }}>{error}</div>}
+      {/* Admin Note */}
+      {booking.adminNote && (
+        <div className={styles.adminNote}>
+          <span className={styles.adminNoteLabel}>Admin Note</span>
+          {booking.adminNote}
+        </div>
+      )}
 
+      {/* Error Message */}
+      {error && <div className={styles.errorMessage}>{error}</div>}
+
+      {/* Admin Actions */}
       {isAdmin && booking.status === 'PENDING' && (
         <>
-          <div className="note-input">
-            <input
-              placeholder="Optional admin note..."
-              value={note}
-              onChange={e => setNote(e.target.value)}
-            />
-          </div>
-          <div className="booking-actions">
-            <button className="btn btn-success btn-sm" onClick={() => handleAction('APPROVE')} disabled={loading}>
+          <textarea
+            className={styles.noteInput}
+            placeholder="Add an optional admin note..."
+            value={note}
+            onChange={e => setNote(e.target.value)}
+          />
+          <div className={styles.bookingActions}>
+            <button 
+              className={`${styles.actionBtn} ${styles.actionBtnSuccess}`}
+              onClick={() => handleAction('APPROVE')} 
+              disabled={loading}
+            >
               ✅ Approve
             </button>
-            <button className="btn btn-danger btn-sm" onClick={() => handleAction('REJECT')} disabled={loading}>
+            <button 
+              className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
+              onClick={() => handleAction('REJECT')} 
+              disabled={loading}
+            >
               ❌ Reject
             </button>
           </div>
         </>
       )}
 
+      {/* Student Actions */}
       {!isAdmin && currentUserId === booking.userId &&
         (booking.status === 'PENDING' || booking.status === 'APPROVED') && (
-        <div className="booking-actions">
+        <div className={styles.bookingActions}>
           {booking.status === 'PENDING' && (
-            <button className="btn btn-primary btn-sm" onClick={() => setIsEditModalOpen(true)} disabled={loading}>
+            <button 
+              className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+              onClick={() => setIsEditModalOpen(true)} 
+              disabled={loading}
+            >
               ✏️ Edit Booking
             </button>
           )}
-          <button className="btn btn-ghost btn-sm" onClick={handleCancel} disabled={loading}>
+          <button 
+            className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
+            onClick={handleCancel} 
+            disabled={loading}
+          >
             🚫 Cancel Booking
           </button>
         </div>
@@ -139,4 +193,35 @@ export default function BookingCard({ booking, isAdmin, currentUserId, onRefresh
       />
     </div>
   );
+}
+
+function getStatusBadgeClass(status: string): string {
+  const baseClass = styles.statusBadge;
+  switch (status) {
+    case 'PENDING':
+      return `${baseClass} ${styles.statusPending}`;
+    case 'APPROVED':
+      return `${baseClass} ${styles.statusApproved}`;
+    case 'REJECTED':
+      return `${baseClass} ${styles.statusRejected}`;
+    case 'CANCELLED':
+      return `${baseClass} ${styles.statusCancelled}`;
+    default:
+      return baseClass;
+  }
+}
+
+function getStatusLabel(status: string): string {
+  switch (status) {
+    case 'PENDING':
+      return '⏳ Pending';
+    case 'APPROVED':
+      return '✅ Approved';
+    case 'REJECTED':
+      return '❌ Rejected';
+    case 'CANCELLED':
+      return '🚫 Cancelled';
+    default:
+      return status;
+  }
 }
