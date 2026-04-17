@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { getAllBookings } from "@/services/bookingApi";
 import BookingCard from "@/components/BookingCard";
+import ToastContainer from "@/components/ToastContainer";
 
 type Status = "ALL" | "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
 
@@ -45,44 +46,46 @@ export default function AdminPanel() {
   }, [tab, fetchBookings]);
 
   return (
-    <div className="page-wrap">
-      <h1 className="page-title">
-        Admin <span>Panel</span>
-      </h1>
+    <ToastContainer>
+      <div className="page-wrap">
+        <h1 className="page-title">
+          Admin <span>Panel</span>
+        </h1>
 
-      <div className="tab-bar">
-        {TABS.map((t) => (
-          <button
-            key={t}
-            className={`tab-btn ${tab === t ? "active" : ""}`}
-            onClick={() => setTab(t)}
-          >
-            {t}
-          </button>
+        <div className="tab-bar">
+          {TABS.map((t) => (
+            <button
+              key={t}
+              className={`tab-btn ${tab === t ? "active" : ""}`}
+              onClick={() => setTab(t)}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+
+        {error && <div className="alert alert-error">{error}</div>}
+        {loading && <div className="loader">Loading…</div>}
+
+        {!loading && data.length === 0 && (
+          <div className="empty-state">
+            <div className="icon">📋</div>
+            <p>
+              No bookings with status <strong>{tab}</strong>.
+            </p>
+          </div>
+        )}
+
+        {data.map((b) => (
+          <BookingCard
+            key={b.id}
+            booking={b}
+            isAdmin={true}
+            currentUserId={""}
+            onRefresh={() => fetchBookings(tab)}
+          />
         ))}
       </div>
-
-      {error && <div className="alert alert-error">{error}</div>}
-      {loading && <div className="loader">Loading…</div>}
-
-      {!loading && data.length === 0 && (
-        <div className="empty-state">
-          <div className="icon">📋</div>
-          <p>
-            No bookings with status <strong>{tab}</strong>.
-          </p>
-        </div>
-      )}
-
-      {data.map((b) => (
-        <BookingCard
-          key={b.id}
-          booking={b}
-          isAdmin={true}
-          currentUserId={""}
-          onRefresh={() => fetchBookings(tab)}
-        />
-      ))}
-    </div>
+    </ToastContainer>
   );
 }
