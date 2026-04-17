@@ -115,3 +115,46 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to update booking' }, { status: 500 });
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const url = new URL(BACKEND_URL);
+    
+    searchParams.forEach((value, key) => {
+      url.searchParams.append(key, value);
+    });
+
+    const body = await request.json();
+    
+    // Extract ID from the URL path
+    const pathSegments = request.nextUrl.pathname.split('/');
+    const id = pathSegments[pathSegments.length - 1];
+    
+    if (id && id !== 'route.ts') {
+      url.pathname = `${BACKEND_URL}/${id}`;
+    }
+
+    console.log('[API Proxy] PUT to:', url.toString());
+    console.log('[API Proxy] PUT body:', body);
+
+    const response = await fetch(url.toString(), {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('[API Proxy] PUT error:', data);
+    }
+    
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    console.error('[API Proxy] PUT Error:', error);
+    return NextResponse.json({ error: 'Failed to update booking' }, { status: 500 });
+  }
+}
