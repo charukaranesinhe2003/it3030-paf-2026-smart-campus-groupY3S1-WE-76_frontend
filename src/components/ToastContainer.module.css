@@ -1,0 +1,23 @@
+.container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: auto;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Responsive: on smaller screens, position at bottom */
+@media (max-width: 640px) {
+  .container {
+    top: auto;
+    bottom: 20px;
+    right: 10px;
+    left: 10px;
+    max-width: calc(100% - 20px);
+  }
+}
