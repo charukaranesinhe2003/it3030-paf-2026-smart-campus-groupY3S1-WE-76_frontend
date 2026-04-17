@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { createBooking } from '@/services/bookingApi';
 import DateTimePicker from '@/components/DateTimePicker';
+import ToastContainer, { useToast } from '@/components/ToastContainer';
 import styles from './booking.module.css';
 
 interface BookingForm {
@@ -12,6 +13,7 @@ interface BookingForm {
   resourceName: string;
   startTime: string;
   endTime: string;
+  attendeeCount: string;
   purpose: string;
 }
 
@@ -20,6 +22,7 @@ interface ValidationErrors {
   resourceName?: string;
   startTime?: string;
   endTime?: string;
+  attendeeCount?: string;
 }
 
 const RESOURCES = [
@@ -34,10 +37,11 @@ const RESOURCES = [
 const MIN_BOOKING_DURATION = 30; // minutes
 const MAX_BOOKING_DURATION = 480; // 8 hours in minutes
 
-export default function CreateBooking() {
+function CreateBookingContent() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [form, setForm] = useState<BookingForm>({
-    userId: '', resourceName: '', startTime: '', endTime: '', purpose: '',
+    userId: '', resourceName: '', startTime: '', endTime: '', attendeeCount: '', purpose: '',
   });
   
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
@@ -71,6 +75,22 @@ export default function CreateBooking() {
     // Validate resourceName
     if (!form.resourceName.trim()) {
       errors.resourceName = 'Please select a resource';
+    }
+
+    // Validate attendeeCount
+    if (!form.attendeeCount) {
+      errors.attendeeCount = 'Attendee count is required';
+    } else {
+      const count = parseInt(form.attendeeCount, 10);
+      if (isNaN(count) || count < 1) {
+        errors.attendeeCount = 'Attendee count must be at least 1';
+      } else {
+        // Get selected resource capacity
+        const selectedResource = RESOURCES.find(r => r.id === form.resourceName);
+        if (selectedResource && count > selectedResource.capacity) {
+          errors.attendeeCount = `Attendee count cannot exceed capacity of ${selectedResource.capacity}`;
+        }
+      }
     }
 
     // Validate startTime
@@ -147,6 +167,7 @@ export default function CreateBooking() {
         resourceName: form.resourceName,
         startTime: startTime,
         endTime: endTime,
+        attendeeCount: parseInt(form.attendeeCount, 10),
         purpose: form.purpose.trim() || null,
       };
 
@@ -171,10 +192,11 @@ export default function CreateBooking() {
       setBookingId(res.data.id);
       setShowSuccessModal(true);
       setSuccess(`Booking #${res.data.id} submitted successfully!`);
+      showToast(`Booking #${res.data.id} submitted successfully!`, 'success', 4000);
 
       // Reset form
       setForm({
-        userId: '', resourceName: '', startTime: '', endTime: '', purpose: '',
+        userId: '', resourceName: '', startTime: '', endTime: '', attendeeCount: '', purpose: '',
       });
 
       // Navigate after 3 seconds
@@ -187,16 +209,18 @@ export default function CreateBooking() {
       let details = '';
 
       if (axios.isAxiosError(e)) {
-        console.error('API Error Details:', {
-          status: e.response?.status,
-          data: e.response?.data,
-          statusText: e.response?.statusText,
-          config: e.config
-        });
-
-        // Check for specific error fields
+        const status = e.response?.status;
         const responseData = e.response?.data as any;
         
+        console.error('API Error Details:', {
+          status,
+          statusText: e.response?.statusText,
+          data: responseData,
+          headers: e.response?.headers,
+          request: e.config?.url
+        });
+
+        // Priority order for error extraction
         if (responseData?.message) {
           msg = responseData.message;
         } else if (responseData?.error) {
@@ -207,32 +231,54 @@ export default function CreateBooking() {
           details = Object.entries(responseData.fieldErrors)
             .map(([field, errors]) => `${field}: ${errors}`)
             .join('; ');
-        } else if (e.response?.status === 400) {
+        } else if (status === 400 || status === 422) {
           msg = 'Validation error from server';
           // Try to extract meaningful error details
           if (typeof responseData === 'string') {
             details = responseData;
-          } else {
+          } else if (responseData) {
             details = JSON.stringify(responseData, null, 2);
           }
-        } else if (e.response?.status === 409) {
+        } else if (status === 409) {
           msg = 'Booking conflict: Resource is already booked for this time';
-        } else if (e.response?.status === 500) {
+          details = responseData?.message || '';
+        } else if (status === 500) {
           msg = 'Server error. Please try again later.';
           if (responseData?.message) {
             details = responseData.message;
+          } else if (typeof responseData === 'string') {
+            details = responseData;
+          } else {
+            details = JSON.stringify(responseData, null, 2);
           }
         } else if (e.code === 'ECONNREFUSED' || e.code === 'ERR_NETWORK') {
           msg = 'Cannot connect to backend server. Is it running on port 8081?';
         } else if (e.message === 'Network Error') {
           msg = 'Network error. Check if backend is running.';
+        } else {
+          // Fallback: include full response data
+          msg = `API Error (${status}): ${e.response?.statusText || 'Unknown'}`;
+          if (typeof responseData === 'string') {
+            details = responseData;
+          } else if (responseData) {
+            details = JSON.stringify(responseData, null, 2);
+          }
         }
+      } else if (e instanceof Error) {
+        console.error('Non-Axios Error:', {
+          name: e.name,
+          message: e.message,
+          stack: e.stack
+        });
+        msg = e.message || 'An unexpected error occurred';
       }
 
       console.error('Error message to display:', msg);
       console.error('Error details:', details);
 
-      setError(details ? `${msg}\n\n${details}` : msg);
+      const errorMsg = details ? `${msg}\n\n${details}` : msg;
+      setError(errorMsg);
+      showToast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -344,6 +390,30 @@ export default function CreateBooking() {
               )}
             </div>
 
+            {/* Attendee Count Field */}
+            <div className={styles.formGroup}>
+              <label htmlFor="attendeeCount" className={styles.label}>
+                Number of Attendees <span className={styles.required}>*</span>
+              </label>
+              <input
+                id="attendeeCount"
+                type="number"
+                name="attendeeCount"
+                value={form.attendeeCount}
+                onChange={onChange}
+                placeholder="e.g., 5"
+                min="1"
+                className={`${styles.input} ${validationErrors.attendeeCount ? styles.inputError : ''}`}
+                aria-invalid={!!validationErrors.attendeeCount}
+                aria-describedby={validationErrors.attendeeCount ? 'attendee-error' : undefined}
+              />
+              {validationErrors.attendeeCount && (
+                <span id="attendee-error" className={styles.errorMessage}>
+                  {validationErrors.attendeeCount}
+                </span>
+              )}
+            </div>
+
             {/* Date/Time Selection */}
             <div className={styles.dateTimeSection}>
               <div className={styles.formRow}>
@@ -444,5 +514,13 @@ export default function CreateBooking() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CreateBooking() {
+  return (
+    <ToastContainer>
+      <CreateBookingContent />
+    </ToastContainer>
   );
 }
