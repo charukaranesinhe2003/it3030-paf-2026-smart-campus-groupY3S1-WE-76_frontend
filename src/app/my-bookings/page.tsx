@@ -6,6 +6,7 @@ import { getBookingsByUser } from "@/services/bookingApi";
 import BookingCard from "@/components/BookingCard";
 import ToastContainer, { useToast } from "@/components/ToastContainer";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useAuth } from "@/context/AuthContext";
 import styles from "./MyBookings.module.css";
 
 type Booking = {
@@ -24,9 +25,10 @@ type Booking = {
 
 function MyBookingsContent() {
   const { showToast } = useToast();
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState<"list" | "schedule">("list");
-  const [userId, setUserId] = useState("");
-  const [input, setInput] = useState("");
+  // userId is now sourced from the JWT — no manual input needed
+  const userId = user?.userId?.toString() ?? "";
   const [data, setData] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -69,12 +71,12 @@ function MyBookingsContent() {
     }
   }, []);
 
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    setUserId(input.trim());
-    fetchBookings(input.trim());
-  };
+  // Auto-load bookings when the authenticated user is available
+  useEffect(() => {
+    if (userId) {
+      fetchBookings(userId);
+    }
+  }, [userId, fetchBookings]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -134,20 +136,6 @@ function MyBookingsContent() {
             <h1 className={styles.title}>My Bookings</h1>
             <p className={styles.subtitle}>Track requests, monitor approvals, and manage upcoming sessions in one place.</p>
           </div>
-        </div>
-
-        <div className={styles.searchSection}>
-          <form className={styles.searchForm} onSubmit={handleSearch}>
-            <input
-              className={styles.searchInput}
-              placeholder="Enter your User ID to view bookings..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-            />
-            <button type="submit" className={styles.searchBtn} disabled={loading}>
-              {loading ? "Searching..." : "Search"}
-            </button>
-          </form>
         </div>
 
         {error && (
@@ -215,8 +203,7 @@ function MyBookingsContent() {
             <div className={styles.emptyIcon}>0</div>
             <h2 className={styles.emptyTitle}>No Bookings Found</h2>
             <p className={styles.emptyText}>
-              No bookings found for <strong>{userId}</strong>. <br />
-              Try searching with a different User ID or create a new booking.
+              You have no bookings yet. Create one to get started.
             </p>
             <a href="/create-booking" className={styles.emptyAction}>
               Create New Booking

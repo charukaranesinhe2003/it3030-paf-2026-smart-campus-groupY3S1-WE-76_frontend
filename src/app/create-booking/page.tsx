@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { createBooking } from '@/services/bookingApi';
 import DateTimePicker from '@/components/DateTimePicker';
 import ToastContainer, { useToast } from '@/components/ToastContainer';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/context/AuthContext';
 import styles from './booking.module.css';
 
 interface BookingForm {
@@ -79,9 +80,22 @@ function normalizeLocalDateTime(value: string): string {
 function CreateBookingContent() {
   const router = useRouter();
   const { showToast } = useToast();
+  const { user } = useAuth();
+
   const [form, setForm] = useState<BookingForm>({
     userId: '', email: '', resourceName: '', startTime: '', endTime: '', attendeeCount: '', purpose: '',
   });
+
+  // Pre-fill userId and email from JWT as soon as the user is available
+  useEffect(() => {
+    if (user) {
+      setForm(f => ({
+        ...f,
+        userId: user.userId.toString(),
+        email: user.email,
+      }));
+    }
+  }, [user]);
   
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(false);
@@ -261,14 +275,20 @@ function CreateBookingContent() {
       setSuccess(`Booking #${res.data.id} submitted successfully!`);
       showToast(`Booking #${res.data.id} submitted successfully!`, 'success', 4000);
 
-      // Reset form
+      // Reset form — keep userId and email from JWT
       setForm({
-        userId: '', email: '', resourceName: '', startTime: '', endTime: '', attendeeCount: '', purpose: '',
+        userId: user?.userId.toString() ?? '',
+        email: user?.email ?? '',
+        resourceName: '',
+        startTime: '',
+        endTime: '',
+        attendeeCount: '',
+        purpose: '',
       });
 
       // Navigate after 3 seconds
       setTimeout(() => {
-        router.push(`/my-bookings?userId=${payload.userId}`);
+        router.push(`/my-bookings`);
       }, 3000);
     } catch (e) {
       let msg = 'Failed to create booking. Please try again.';
@@ -453,50 +473,36 @@ function CreateBookingContent() {
                 <span className={styles.sectionKicker}>Step 1</span>
                 <h3 className={styles.sectionTitle}>Requester Details</h3>
               </div>
-            {/* User ID Field */}
+            {/* User ID Field — pre-filled from JWT, read-only */}
             <div className={styles.formGroup}>
               <label htmlFor="userId" className={styles.label}>
-                User ID <span className={styles.required}>*</span>
+                User ID
               </label>
               <input
                 id="userId"
                 type="text"
                 name="userId"
                 value={form.userId}
-                onChange={onChange}
-                placeholder="e.g., student_001 or faculty_john"
-                className={`${styles.input} ${validationErrors.userId ? styles.inputError : ''}`}
-                aria-invalid={!!validationErrors.userId}
-                aria-describedby={validationErrors.userId ? 'userId-error' : undefined}
+                readOnly
+                className={`${styles.input}`}
+                style={{ opacity: 0.7, cursor: 'not-allowed' }}
               />
-              {validationErrors.userId && (
-                <span id="userId-error" className={styles.errorMessage}>
-                  {validationErrors.userId}
-                </span>
-              )}
             </div>
 
-            {/* Email Field */}
+            {/* Email Field — pre-filled from JWT, read-only */}
             <div className={styles.formGroup}>
               <label htmlFor="email" className={styles.label}>
-                Email Address <span className={styles.required}>*</span>
+                Email Address
               </label>
               <input
                 id="email"
                 type="email"
                 name="email"
                 value={form.email}
-                onChange={onChange}
-                placeholder="e.g., student@university.edu"
-                className={`${styles.input} ${validationErrors.email ? styles.inputError : ''}`}
-                aria-invalid={!!validationErrors.email}
-                aria-describedby={validationErrors.email ? 'email-error' : undefined}
+                readOnly
+                className={`${styles.input}`}
+                style={{ opacity: 0.7, cursor: 'not-allowed' }}
               />
-              {validationErrors.email && (
-                <span id="email-error" className={styles.errorMessage}>
-                  {validationErrors.email}
-                </span>
-              )}
             </div>
 
             <div className={styles.sectionHeader}>
