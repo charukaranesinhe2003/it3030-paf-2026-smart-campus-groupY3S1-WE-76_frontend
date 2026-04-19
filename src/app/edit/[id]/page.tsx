@@ -6,21 +6,19 @@ import { useParams, useRouter } from "next/navigation";
 import ResourceForm from "../../../components/ResourceForm";
 import { getResourceById, updateResource } from "../../../services/resourceService";
 import ProtectedRoute from "../../../components/ProtectedRoute";
+import ToastContainer, { useToast } from "../../../components/ToastContainer";
 
 type FormDataType = {
-  name: string;
-  type: string;
-  capacity: string | number;
-  location: string;
-  availabilityStart: string;
-  availabilityEnd: string;
-  status: string;
+  name: string; type: string; capacity: string | number;
+  location: string; availabilityStart: string; availabilityEnd: string; status: string;
 };
 
 export default function EditResourcePage() {
   return (
     <ProtectedRoute requiredRoles={["ROLE_ADMIN"]}>
-      <EditResourceContent />
+      <ToastContainer>
+        <EditResourceContent />
+      </ToastContainer>
     </ProtectedRoute>
   );
 }
@@ -28,32 +26,27 @@ export default function EditResourcePage() {
 function EditResourceContent() {
   const params = useParams();
   const router = useRouter();
+  const { showToast } = useToast();
   const id = params.id as string;
 
   const [initialData, setInitialData] = useState<FormDataType | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadResource();
-  }, []);
+  useEffect(() => { loadResource(); }, []);
 
   const loadResource = async () => {
     try {
       const response = await getResourceById(id);
       const data = response.data;
-
       setInitialData({
-        name: data.name || "",
-        type: data.type || "",
-        capacity: data.capacity ?? "",
-        location: data.location || "",
+        name: data.name || "", type: data.type || "",
+        capacity: data.capacity ?? "", location: data.location || "",
         availabilityStart: data.availabilityStart || "",
         availabilityEnd: data.availabilityEnd || "",
         status: data.status || "ACTIVE",
       });
-    } catch (error) {
-      console.error("Error loading resource:", error);
-      alert("Failed to load resource");
+    } catch {
+      showToast("Failed to load resource", "error");
     } finally {
       setLoading(false);
     }
@@ -61,16 +54,11 @@ function EditResourceContent() {
 
   const handleUpdate = async (data: FormDataType) => {
     try {
-      await updateResource(id, {
-        ...data,
-        capacity: Number(data.capacity),
-      });
-
-      alert("Resource updated successfully");
+      await updateResource(id, { ...data, capacity: Number(data.capacity) });
+      showToast("Resource updated successfully", "success");
       router.push("/");
-    } catch (error) {
-      console.error("Error updating resource:", error);
-      alert("Failed to update resource");
+    } catch {
+      showToast("Failed to update resource", "error");
     }
   };
 

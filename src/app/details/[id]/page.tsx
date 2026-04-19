@@ -33,7 +33,7 @@ export default function ResourceDetailsPage() {
       setResource(response.data);
     } catch (error) {
       console.error("Error loading resource details:", error);
-      alert("Failed to load resource details");
+      setResource(null);
     } finally {
       setLoading(false);
     }

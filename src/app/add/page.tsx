@@ -5,48 +5,37 @@ import { useRouter } from "next/navigation";
 import ResourceForm from "../../components/ResourceForm";
 import { createResource } from "../../services/resourceService";
 import ProtectedRoute from "../../components/ProtectedRoute";
+import ToastContainer, { useToast } from "../../components/ToastContainer";
 
 export default function AddResourcePage() {
   return (
     <ProtectedRoute requiredRoles={["ROLE_ADMIN"]}>
-      <AddResourceContent />
+      <ToastContainer>
+        <AddResourceContent />
+      </ToastContainer>
     </ProtectedRoute>
   );
 }
 
 function AddResourceContent() {
   const router = useRouter();
+  const { showToast } = useToast();
 
   const initialData = {
-    name: "",
-    type: "",
-    capacity: "",
-    location: "",
-    availabilityStart: "",
-    availabilityEnd: "",
-    status: "ACTIVE",
+    name: "", type: "", capacity: "", location: "",
+    availabilityStart: "", availabilityEnd: "", status: "ACTIVE",
   };
 
   const handleCreate = async (data: {
-    name: string;
-    type: string;
-    capacity: string | number;
-    location: string;
-    availabilityStart: string;
-    availabilityEnd: string;
-    status: string;
+    name: string; type: string; capacity: string | number;
+    location: string; availabilityStart: string; availabilityEnd: string; status: string;
   }) => {
     try {
-      await createResource({
-        ...data,
-        capacity: Number(data.capacity),
-      });
-
-      alert("Resource added successfully");
+      await createResource({ ...data, capacity: Number(data.capacity) });
+      showToast("Resource added successfully", "success");
       router.push("/");
-    } catch (error) {
-      console.error("Error adding resource:", error);
-      alert("Failed to add resource");
+    } catch {
+      showToast("Failed to add resource", "error");
     }
   };
 

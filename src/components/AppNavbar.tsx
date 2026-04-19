@@ -13,10 +13,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/",              label: "Resources"      },
-  { href: "/create-booking",label: "+ New Booking"  },
-  { href: "/my-bookings",   label: "My Bookings"    },
-  { href: "/admin-panel",   label: "Admin Panel", roles: ["ROLE_ADMIN"] },
+  { href: "/",               label: "Resources"     },
+  { href: "/create-booking", label: "+ New Booking" },
+  { href: "/my-bookings",    label: "My Bookings"   },
+  { href: "/admin-panel",    label: "Bookings Admin", roles: ["ROLE_ADMIN"] },
+  { href: "/admin/users",    label: "Users",          roles: ["ROLE_ADMIN"] },
 ];
 
 /**
@@ -68,17 +69,25 @@ export default function AppNavbar() {
         })}
       </div>
 
-      {/* Right side — bell + user info + logout */}
+      {/* Right side — bell + profile + logout */}
       {isAuthenticated && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <NotificationBell />
 
-          <span className="hidden text-sm text-gray-500 sm:block">
-            {user?.email}
-          </span>
+          <Link
+            href="/profile"
+            className={`hidden rounded-lg px-3 py-1.5 text-sm font-medium transition sm:block ${
+              pathname === "/profile"
+                ? "bg-blue-600 text-white"
+                : "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+            }`}
+          >
+            {user?.email?.split("@")[0] ?? "Profile"}
+          </Link>
 
           <button
             onClick={logout}
+            aria-label="Sign out"
             className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-100"
           >
             Sign out
