@@ -223,6 +223,7 @@ function CreateBookingContent() {
       const payload = {
         userId: form.userId.trim(),
         email: form.email.trim().toLowerCase(),
+        userEntityId: user?.userId ?? null,   // send DB id for notification dispatch
         resourceName: form.resourceName,
         startTime: startTime,
         endTime: endTime,
