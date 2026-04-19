@@ -5,6 +5,7 @@ import axios from "axios";
 import { getBookingsByUser } from "@/services/bookingApi";
 import BookingCard from "@/components/BookingCard";
 import ToastContainer, { useToast } from "@/components/ToastContainer";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import styles from "./MyBookings.module.css";
 
 type Booking = {
@@ -278,8 +279,10 @@ function MyBookingsContent() {
 
 export default function MyBookings() {
   return (
-    <ToastContainer>
-      <MyBookingsContent />
-    </ToastContainer>
+    <ProtectedRoute>
+      <ToastContainer>
+        <MyBookingsContent />
+      </ToastContainer>
+    </ProtectedRoute>
   );
 }

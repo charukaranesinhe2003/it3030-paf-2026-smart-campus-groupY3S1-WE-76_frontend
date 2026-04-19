@@ -4,6 +4,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { getAllBookings } from "@/services/bookingApi";
 import BookingCard from "@/components/BookingCard";
 import ToastContainer from "@/components/ToastContainer";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { useAuth } from "@/context/AuthContext";
 import styles from "./AdminPanel.module.css";
 
 type Status = "ALL" | "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
@@ -34,6 +36,15 @@ type Analytics = {
 const TABS: Status[] = ["ALL", "PENDING", "APPROVED", "REJECTED", "CANCELLED"];
 
 export default function AdminPanel() {
+  return (
+    <ProtectedRoute requiredRoles={["ROLE_ADMIN"]}>
+      <AdminPanelContent />
+    </ProtectedRoute>
+  );
+}
+
+function AdminPanelContent() {
+  const { user } = useAuth();
   const [tab, setTab] = useState<Status>("ALL");
   const [data, setData] = useState<Booking[]>([]);
   const [analytics, setAnalytics] = useState<Analytics>({
@@ -171,7 +182,7 @@ export default function AdminPanel() {
                   key={b.id}
                   booking={b}
                   isAdmin={true}
-                  currentUserId={""}
+                  currentUserId={user?.userId?.toString() ?? ""}
                   onRefresh={() => fetchBookings(tab)}
                 />
               ))}

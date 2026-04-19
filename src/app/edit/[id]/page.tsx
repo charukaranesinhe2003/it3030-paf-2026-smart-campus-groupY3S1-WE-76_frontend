@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import ResourceForm from "../../../components/ResourceForm";
 import { getResourceById, updateResource } from "../../../services/resourceService";
+import ProtectedRoute from "../../../components/ProtectedRoute";
 
 type FormDataType = {
   name: string;
@@ -17,6 +18,14 @@ type FormDataType = {
 };
 
 export default function EditResourcePage() {
+  return (
+    <ProtectedRoute requiredRoles={["ROLE_ADMIN"]}>
+      <EditResourceContent />
+    </ProtectedRoute>
+  );
+}
+
+function EditResourceContent() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;

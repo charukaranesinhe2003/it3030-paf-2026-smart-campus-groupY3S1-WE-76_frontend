@@ -6,6 +6,7 @@ import axios from 'axios';
 import { createBooking } from '@/services/bookingApi';
 import DateTimePicker from '@/components/DateTimePicker';
 import ToastContainer, { useToast } from '@/components/ToastContainer';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import styles from './booking.module.css';
 
 interface BookingForm {
@@ -661,8 +662,10 @@ function CreateBookingContent() {
 
 export default function CreateBooking() {
   return (
-    <ToastContainer>
-      <CreateBookingContent />
-    </ToastContainer>
+    <ProtectedRoute>
+      <ToastContainer>
+        <CreateBookingContent />
+      </ToastContainer>
+    </ProtectedRoute>
   );
 }

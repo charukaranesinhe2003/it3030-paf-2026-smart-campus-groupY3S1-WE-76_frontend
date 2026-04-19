@@ -4,8 +4,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ResourceForm from "../../components/ResourceForm";
 import { createResource } from "../../services/resourceService";
+import ProtectedRoute from "../../components/ProtectedRoute";
 
 export default function AddResourcePage() {
+  return (
+    <ProtectedRoute requiredRoles={["ROLE_ADMIN"]}>
+      <AddResourceContent />
+    </ProtectedRoute>
+  );
+}
+
+function AddResourceContent() {
   const router = useRouter();
 
   const initialData = {
