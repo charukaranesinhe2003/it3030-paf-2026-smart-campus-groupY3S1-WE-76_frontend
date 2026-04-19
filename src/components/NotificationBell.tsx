@@ -119,7 +119,7 @@ export default function NotificationBell() {
             </h3>
           </div>
 
-          <ul className="max-h-80 overflow-y-auto">
+          <ul className="max-h-80 overflow-y-auto" role="list" aria-label="Notifications">
             {notifications.length === 0 ? (
               <li className="px-4 py-6 text-center text-sm text-gray-400">
                 No notifications yet
@@ -129,7 +129,11 @@ export default function NotificationBell() {
                 <li
                   key={n.id}
                   onClick={() => handleMarkRead(n)}
-                  className={`cursor-pointer border-b border-gray-50 px-4 py-3 text-sm transition hover:bg-gray-50 ${
+                  onKeyDown={(e) => e.key === "Enter" && handleMarkRead(n)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${n.isRead ? "Read" : "Unread"}: ${n.message}`}
+                  className={`cursor-pointer border-b border-gray-50 px-4 py-3 text-sm transition hover:bg-gray-50 focus:outline-none focus:bg-gray-50 ${
                     n.isRead ? "opacity-60" : "font-medium"
                   }`}
                 >
