@@ -150,12 +150,14 @@ export default function HomePage() {
             <h1 className="text-2xl font-bold text-gray-800">Facilities & Assets Catalogue</h1>
             <p className="mt-1 text-sm text-gray-500">Manage lecture halls, labs, meeting rooms, and equipment</p>
           </div>
-          <Link
-            href="/add"
-            className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-          >
-            + Add Resource
-          </Link>
+          {user?.roles.includes("ROLE_ADMIN") && (
+            <Link
+              href="/add"
+              className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              + Add Resource
+            </Link>
+          )}
         </div>
 
         {/* Search filters */}

@@ -1,14 +1,11 @@
-import axios from 'axios';
+import axiosInstance from './axiosInstance';
 
-// Use relative URL to Next.js API route (which proxies to backend)
-const BASE_URL = '/api/bookings';
+const BASE = '/api/bookings';
 
-const api = axios.create({ baseURL: BASE_URL });
-
-export const createBooking     = (data: any)                      => api.post('/', data);
-export const getAllBookings    = (status: string | null)          => api.get('/', { params: status ? { status } : {} });
-export const getBookingById    = (id: number)                     => api.get(`/${id}`);
-export const getBookingsByUser = (userId: string)                 => api.get(`/user/${userId}`);
-export const approveOrReject   = (id: number, data: any)          => api.patch(`/${id}/status`, data);
-export const cancelBooking     = (id: number, userId: string)     => api.patch(`/${id}/cancel`, null, { params: { userId } });
-export const updateBooking     = (id: number, data: any, userId: string) => api.put(`/${id}`, data, { params: { userId } });
+export const createBooking     = (data: unknown)                             => axiosInstance.post(`${BASE}/`, data);
+export const getAllBookings     = (status: string | null)                     => axiosInstance.get(`${BASE}/`, { params: status ? { status } : {} });
+export const getBookingById    = (id: number)                                => axiosInstance.get(`${BASE}/${id}`);
+export const getBookingsByUser = (userId: string)                            => axiosInstance.get(`${BASE}/user/${userId}`);
+export const approveOrReject   = (id: number, data: unknown)                 => axiosInstance.patch(`${BASE}/${id}/status`, data);
+export const cancelBooking     = (id: number, userId: string)                => axiosInstance.patch(`${BASE}/${id}/cancel`, null, { params: { userId } });
+export const updateBooking     = (id: number, data: unknown, userId: string) => axiosInstance.put(`${BASE}/${id}`, data, { params: { userId } });

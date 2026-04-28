@@ -1,9 +1,9 @@
+/* Google Fonts — used by CSS Module pages (booking, admin-panel, my-bookings) */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Google Fonts — used by CSS Module pages (booking, admin-panel, my-bookings) */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
 /*
  * CSS custom properties below are kept ONLY for CSS Module pages that still
