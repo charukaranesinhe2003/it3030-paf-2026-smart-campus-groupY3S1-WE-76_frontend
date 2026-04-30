@@ -31,7 +31,7 @@ function AddResourceContent() {
     location: string; availabilityStart: string; availabilityEnd: string; status: string;
   }) => {
     try {
-      await createResource({ ...data, capacity: Number(data.capacity) });
+      await createResource({ ...data, capacity: Number(data.capacity), status: data.status as "ACTIVE" | "OUT_OF_SERVICE" });
       showToast("Resource added successfully", "success");
       router.push("/");
     } catch {

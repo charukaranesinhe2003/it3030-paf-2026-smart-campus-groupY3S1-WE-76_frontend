@@ -351,7 +351,7 @@ function CreateBookingContent() {
             details = JSON.stringify(responseData, null, 2);
           }
         } else if (e.code === 'ECONNREFUSED' || e.code === 'ERR_NETWORK') {
-          msg = 'Cannot connect to backend server. Is it running on port 8081?';
+          msg = 'Cannot connect to backend server. Is it running on port 8082?';
         } else if (e.message === 'Network Error') {
           msg = 'Network error. Check if backend is running.';
         } else {

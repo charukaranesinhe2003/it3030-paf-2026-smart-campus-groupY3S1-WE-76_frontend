@@ -54,7 +54,7 @@ function EditResourceContent() {
 
   const handleUpdate = async (data: FormDataType) => {
     try {
-      await updateResource(id, { ...data, capacity: Number(data.capacity) });
+      await updateResource(id, { ...data, capacity: Number(data.capacity), status: data.status as "ACTIVE" | "OUT_OF_SERVICE" });
       showToast("Resource updated successfully", "success");
       router.push("/");
     } catch {
