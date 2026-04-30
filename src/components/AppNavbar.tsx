@@ -15,6 +15,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: "/",               label: "Resources"       },
   { href: "/create-booking", label: "+ New Booking"   },
+  { href: "/incidents",      label: "Report Incident" },
   { href: "/my-bookings",    label: "My Bookings"     },
   { href: "/admin-panel",    label: "Bookings Admin", roles: ["ROLE_ADMIN"] },
   { href: "/admin/users",    label: "Users",          roles: ["ROLE_ADMIN"] },

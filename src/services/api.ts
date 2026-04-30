@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8081";
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8082";
 
 export async function fetchHealth(): Promise<string> {
   let response: Response;

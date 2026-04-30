@@ -21,11 +21,11 @@ beforeEach(() => {
  *
  * For any optional name value (including undefined, empty string, and arbitrary
  * non-empty strings), fetchHello SHALL construct and call the correct backend URL:
- *   - http://localhost:8081/hello  when name is absent or empty
- *   - http://localhost:8081/hello?name={encodeURIComponent(name)}  when name is non-empty
+ *   - http://localhost:8082/hello  when name is absent or empty
+ *   - http://localhost:8082/hello?name={encodeURIComponent(name)}  when name is non-empty
  */
 describe("Property 3: API service URL construction", () => {
-  it("calls fetch with http://localhost:8081/hello when name is empty or undefined", async () => {
+  it("calls fetch with http://localhost:8082/hello when name is empty or undefined", async () => {
     await fc.assert(
       fc.asyncProperty(
         // Generate empty strings and undefined-equivalent cases
@@ -44,13 +44,13 @@ describe("Property 3: API service URL construction", () => {
           await fetchHello(name as string | undefined);
 
           expect(mockFetch).toHaveBeenCalledTimes(1);
-          expect(mockFetch).toHaveBeenCalledWith("http://localhost:8081/hello");
+          expect(mockFetch).toHaveBeenCalledWith("http://localhost:8082/hello");
         }
       )
     );
   });
 
-  it("calls fetch with http://localhost:8081/hello?name=<encoded> when name is non-empty", async () => {
+  it("calls fetch with http://localhost:8082/hello?name=<encoded> when name is non-empty", async () => {
     await fc.assert(
       fc.asyncProperty(
         // Generate arbitrary non-empty strings
@@ -64,7 +64,7 @@ describe("Property 3: API service URL construction", () => {
 
           await fetchHello(name);
 
-          const expectedUrl = `http://localhost:8081/hello?name=${encodeURIComponent(name)}`;
+          const expectedUrl = `http://localhost:8082/hello?name=${encodeURIComponent(name)}`;
           expect(mockFetch).toHaveBeenCalledTimes(1);
           expect(mockFetch).toHaveBeenCalledWith(expectedUrl);
         }

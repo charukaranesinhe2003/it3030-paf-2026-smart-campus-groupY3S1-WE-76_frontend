@@ -9,7 +9,7 @@ beforeEach(() => {
 });
 
 describe("fetchHealth", () => {
-  it("calls fetch with http://localhost:8081/", async () => {
+  it("calls fetch with http://localhost:8082/", async () => {
     // Req 8.1
     mockFetch.mockResolvedValue({
       ok: true,
@@ -19,7 +19,7 @@ describe("fetchHealth", () => {
     await fetchHealth();
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockFetch).toHaveBeenCalledWith("http://localhost:8081/");
+    expect(mockFetch).toHaveBeenCalledWith("http://localhost:8082/");
   });
 
   it("throws a descriptive error when fetch rejects", async () => {
@@ -31,7 +31,7 @@ describe("fetchHealth", () => {
 });
 
 describe("fetchHello", () => {
-  it("calls fetch with http://localhost:8081/hello when called with no argument", async () => {
+  it("calls fetch with http://localhost:8082/hello when called with no argument", async () => {
     // Req 8.2
     mockFetch.mockResolvedValue({
       ok: true,
@@ -41,10 +41,10 @@ describe("fetchHello", () => {
     await fetchHello();
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockFetch).toHaveBeenCalledWith("http://localhost:8081/hello");
+    expect(mockFetch).toHaveBeenCalledWith("http://localhost:8082/hello");
   });
 
-  it('calls fetch with http://localhost:8081/hello?name=Amith when called with "Amith"', async () => {
+  it('calls fetch with http://localhost:8082/hello?name=Amith when called with "Amith"', async () => {
     // Req 8.2
     mockFetch.mockResolvedValue({
       ok: true,
@@ -55,7 +55,7 @@ describe("fetchHello", () => {
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(mockFetch).toHaveBeenCalledWith(
-      "http://localhost:8081/hello?name=Amith"
+      "http://localhost:8082/hello?name=Amith"
     );
   });
 
