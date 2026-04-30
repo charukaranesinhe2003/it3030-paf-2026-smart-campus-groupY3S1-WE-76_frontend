@@ -51,11 +51,27 @@ export default function ProtectedRoute({
   }, [isAuthenticated, user, requiredRoles, router]);
 
   // Don't render children until auth is confirmed
-  if (!isAuthenticated) return null;
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <p className="text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (requiredRoles && requiredRoles.length > 0) {
     const hasRole = requiredRoles.some((role) => user?.roles.includes(role));
-    if (!hasRole) return null;
+    if (!hasRole) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-gray-100">
+          <div className="text-center">
+            <p className="text-gray-600">Access denied. Redirecting...</p>
+          </div>
+        </div>
+      );
+    }
   }
 
   return <>{children}</>;
